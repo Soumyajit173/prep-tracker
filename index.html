@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F5FE0">
+<title>Prep Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#171A1F; --ink-soft:#5B6470; --paper:#F0F2EF; --card:#FFFFFF;
+    --line:#DEE2DD; --amber:#A8641A; --amber-bg:#F5E7D2; --green:#1F8A45; --green-bg:#DCF0E2;
+    --blue:#2F5FE0; --blue-bg:#E4EBFC; --gray-bg:#E7E9E4; --red:#C43E3E;
+    --shadow: 0 1px 2px rgba(23,26,31,0.06), 0 4px 14px rgba(23,26,31,0.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#EAEDF0; --ink-soft:#9098A3; --paper:#101215; --card:#191C20;
+      --line:#2B2F35; --amber:#E3A94A; --amber-bg:#33280F; --green:#4ED17E; --green-bg:#123420;
+      --blue:#7C9CFF; --blue-bg:#19233F; --gray-bg:#20242A; --red:#EA8080;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.35);
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px 16px 70px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:960px;margin:0 auto;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin:0 0 6px;display:flex;align-items:center;gap:8px;}
+  .eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg);animation:pulse 2.2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 3px var(--green-bg);}50%{box-shadow:0 0 0 6px var(--green-bg);}}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin:0 0 20px;letter-spacing:-.01em;opacity:0;animation:fadeSlideUp .5s ease forwards;}
+  @keyframes fadeSlideUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .stats{display:flex;gap:10px;margin-bottom:26px;flex-wrap:wrap;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 18px;min-width:110px;box-shadow:var(--shadow);opacity:0;animation:fadeSlideUp .5s ease forwards;transition:transform .2s ease;}
+  .stat:hover{transform:translateY(-2px);}
+  .stat:nth-child(1){animation-delay:.05s;} .stat:nth-child(2){animation-delay:.1s;} .stat:nth-child(3){animation-delay:.15s;}
+  .stat .num{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .stat .lbl{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .week{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:14px;margin-bottom:34px;}
+  .day{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;box-shadow:var(--shadow);opacity:0;animation:fadeSlideUp .45s ease forwards;transition:transform .2s ease, box-shadow .2s ease;}
+  .day:hover{transform:translateY(-3px);box-shadow:0 4px 8px rgba(23,26,31,0.08), 0 10px 24px rgba(23,26,31,0.08);}
+  .day.today{border-color:var(--blue);box-shadow:0 0 0 1.5px var(--blue), var(--shadow);}
+  .day.complete{border-color:var(--green);box-shadow:0 0 0 1.5px var(--green), var(--shadow);animation:fadeSlideUp .45s ease forwards, glow 2.4s ease-in-out infinite;}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 1.5px var(--green), var(--shadow);}50%{box-shadow:0 0 0 1.5px var(--green), 0 0 0 6px var(--green-bg);}}
+  .day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .day-name-wrap{display:flex;align-items:center;gap:8px;}
+  .day-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;}
+  .day-date{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);}
+  .ring{position:relative;width:26px;height:26px;flex-shrink:0;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring circle{fill:none;stroke-width:3;}
+  .ring .bg{stroke:var(--gray-bg);}
+  .ring .fg{stroke:var(--green);stroke-linecap:round;transition:stroke-dashoffset .5s ease;}
+  .fixed-row{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;background:var(--amber-bg);border-radius:8px;padding:7px 9px;margin-bottom:6px;transition:transform .15s ease;}
+  .fixed-row:hover{transform:scale(1.01);}
+  .fixed-text{font-size:11px;color:var(--amber);font-weight:600;line-height:1.4;}
+  .fixed-actions{display:flex;gap:4px;flex-shrink:0;}
+  .icon-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--ink-soft);padding:2px 5px;line-height:1;border-radius:4px;transition:background .15s ease,color .15s ease;}
+  .icon-btn:hover{color:var(--ink);background:var(--gray-bg);}
+  .window{font-size:11px;color:var(--ink-soft);margin-bottom:10px;font-style:italic;}
+  .add-fixed{font-size:11px;background:none;border:1px dashed var(--line);border-radius:8px;padding:7px 9px;color:var(--ink-soft);cursor:pointer;margin-bottom:10px;transition:border-color .15s ease,color .15s ease;}
+  .add-fixed:hover{border-color:var(--blue);color:var(--blue);}
+  .tasks{display:flex;flex-direction:column;gap:2px;flex:1;}
+  .task{display:flex;align-items:center;gap:7px;font-size:13.5px;padding:3px 0;animation:fadeSlideUp .3s ease forwards;}
+  .cb-wrap{position:relative;width:17px;height:17px;flex-shrink:0;display:inline-block;cursor:pointer;}
+  .cb-wrap input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;}
+  .cb-box{position:absolute;inset:0;border:1.5px solid var(--line);border-radius:5px;background:var(--paper);transition:all .18s ease;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .cb-wrap input:checked ~ .cb-box{background:var(--green);border-color:var(--green);animation:pop .28s ease;}
+  @keyframes pop{0%{transform:scale(1);}45%{transform:scale(1.25);}100%{transform:scale(1);}}
+  .cb-box svg{width:11px;height:11px;stroke:white;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:16;stroke-dashoffset:16;transition:stroke-dashoffset .2s ease .05s;}
+  .cb-wrap input:checked ~ .cb-box svg{stroke-dashoffset:0;}
+  .task-text{flex:1;cursor:text;padding:2px 0;transition:color .2s ease;}
+  .task-text.done{text-decoration:line-through;color:var(--ink-soft);}
+  .task-text-input{flex:1;font-size:13.5px;padding:3px 6px;border:1px solid var(--blue);border-radius:5px;background:var(--paper);color:var(--ink);font-family:inherit;}
+  .del-btn{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:15px;padding:0 4px;flex-shrink:0;border-radius:4px;transition:color .15s ease,transform .15s ease;}
+  .del-btn:hover{color:var(--red);transform:scale(1.15);}
+  .add-row{display:flex;gap:6px;margin-top:10px;}
+  .add-row input{flex:1;font-size:12px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font-family:inherit;transition:border-color .15s ease;}
+  .add-row input:focus{outline:none;border-color:var(--blue);}
+  .add-row button{font-size:12px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--gray-bg);color:var(--ink);cursor:pointer;transition:transform .12s ease,background .15s ease;}
+  .add-row button:hover{background:var(--blue-bg);color:var(--blue);}
+  .add-row button:active{transform:scale(0.94);}
+  .heat-title{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;}
+  .heat{display:grid;grid-template-columns:repeat(20,1fr);gap:4px;}
+  .cell{aspect-ratio:1;border-radius:4px;background:var(--gray-bg);opacity:0;transform:scale(.5);animation:cellIn .3s ease forwards;transition:transform .15s ease;}
+  .cell:hover{transform:scale(1.25);}
+  @keyframes cellIn{to{opacity:1;transform:scale(1);}}
+  .cell.partial{background:#a9d4b6;}
+  .cell.full{background:var(--green);}
+  @media (prefers-color-scheme: dark){ .cell.partial{background:#2c5c3d;} }
+  .legend{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);margin-top:10px;}
+  .legend .cell{width:10px;height:10px;border-radius:3px;opacity:1;transform:none;animation:none;}
+  .reset{font-size:11px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;margin-top:24px;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:.001s !important; animation-iteration-count:1 !important; transition-duration:.001s !important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Consistency tracker</p>
+  <h1>Product-company prep</h1>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="streakNum">0</div><div class="lbl">Day streak</div></div>
+    <div class="stat"><div class="num" id="doneToday">0/0</div><div class="lbl">Today's tasks</div></div>
+    <div class="stat"><div class="num" id="totalDays">0</div><div class="lbl">Days logged</div></div>
+  </div>
+
+  <div class="week" id="weekGrid"></div>
+
+  <div>
+    <div class="heat-title">Last 10 weeks</div>
+    <div class="heat" id="heatGrid"></div>
+    <div class="legend">
+      <span>Less</span>
+      <div class="cell" style="background:var(--gray-bg)"></div>
+      <div class="cell" style="background:#c9dcc0"></div>
+      <div class="cell" style="background:var(--green)"></div>
+      <span>More</span>
+    </div>
+  </div>
+
+  <button class="reset" id="resetBtn">Reset all saved progress</button>
+</div>
+
+<script>
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DEFAULT_FIXED = {
+  0: null,
+  1: null,
+  2: null,
+  3: null,
+  4: { label: 'Coaching 6:30 - 9:00 PM', window: 'Study 9 AM - 1 PM, then revise after coaching' },
+  5: { label: 'Training 6:00 - 11:00 PM', window: 'Study 9 AM - 5 PM before training' },
+  6: { label: 'Training 6:00 - 11:00 PM, Coaching 11:30 PM - 1:30 AM', window: 'Study freely 8 AM - 5:30 PM, rest before the late coaching' },
+};
+const DEFAULT_TASKS = [
+  'DSA - 1 concept + 2-3 problems',
+  'Java / Spring deep dive',
+  'Spaced revision (15 min)',
+  'Project / GitHub commit'
+];
+
+function fmtDate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function startOfWeek(d){
+  const nd = new Date(d);
+  nd.setDate(nd.getDate() - nd.getDay());
+  nd.setHours(0,0,0,0);
+  return nd;
+}
+
+/* --- IndexedDB storage layer (replaces window.storage so this works standalone, offline, once installed) --- */
+const DB_NAME = 'prepTrackerDB';
+const STORE = 'kv';
+let dbPromise = new Promise((resolve, reject) => {
+  const req = indexedDB.open(DB_NAME, 1);
+  req.onupgradeneeded = (e) => {
+    const db = e.target.result;
+    if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'key' });
+  };
+  req.onsuccess = () => resolve(req.result);
+  req.onerror = () => reject(req.error);
+});
+
+async function idbGet(key){
+  const db = await dbPromise;
+  return new Promise((resolve) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(key);
+    req.onsuccess = () => resolve(req.result ? req.result.value : null);
+    req.onerror = () => resolve(null);
+  });
+}
+async function idbSet(key, value){
+  const db = await dbPromise;
+  return new Promise((resolve) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put({ key, value });
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => resolve(false);
+  });
+}
+async function idbDelete(key){
+  const db = await dbPromise;
+  return new Promise((resolve) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(key);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => resolve(false);
+  });
+}
+async function idbKeysWithPrefix(prefix){
+  const db = await dbPromise;
+  return new Promise((resolve) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAllKeys();
+    req.onsuccess = () => resolve((req.result || []).filter(k => k.startsWith(prefix)));
+    req.onerror = () => resolve([]);
+  });
+}
+
+let dayCache = {};
+let fixedCache = {};
+
+async function loadDay(key){
+  if(dayCache[key]) return dayCache[key];
+  const raw = await idbGet('day:'+key);
+  dayCache[key] = raw ? JSON.parse(raw) : { tasks: DEFAULT_TASKS.map(t=>({text:t, done:false})) };
+  return dayCache[key];
+}
+async function saveDay(key, data){
+  dayCache[key] = data;
+  await idbSet('day:'+key, JSON.stringify(data));
+}
+
+async function loadFixed(dayIdx){
+  if(dayIdx in fixedCache) return fixedCache[dayIdx];
+  const raw = await idbGet('fixed:'+dayIdx);
+  fixedCache[dayIdx] = raw ? JSON.parse(raw) : DEFAULT_FIXED[dayIdx];
+  return fixedCache[dayIdx];
+}
+async function saveFixed(dayIdx, data){
+  fixedCache[dayIdx] = data;
+  if(data === null){ await idbDelete('fixed:'+dayIdx); }
+  else{ await idbSet('fixed:'+dayIdx, JSON.stringify(data)); }
+}
+
+async function render(){
+  const today = new Date();
+  const todayKey = fmtDate(today);
+  const sow = startOfWeek(today);
+  const weekGrid = document.getElementById('weekGrid');
+  weekGrid.innerHTML = '';
+
+  for(let i=0;i<7;i++){
+    const d = new Date(sow);
+    d.setDate(d.getDate()+i);
+    const key = fmtDate(d);
+    const dayIdx = d.getDay();
+    const data = await loadDay(key);
+    const fixed = await loadFixed(dayIdx);
+    const isToday = key === todayKey;
+
+    const total = data.tasks.length;
+    const doneN = data.tasks.filter(t=>t.done).length;
+    const isComplete = total>0 && doneN===total;
+
+    const card = document.createElement('div');
+    card.className = 'day' + (isToday ? ' today' : '') + (isComplete ? ' complete' : '');
+    card.style.animationDelay = (i*0.05)+'s';
+
+    const head = document.createElement('div');
+    head.className = 'day-head';
+    const circumference = 2 * Math.PI * 10;
+    const offset = total>0 ? circumference * (1 - doneN/total) : circumference;
+    head.innerHTML = `
+      <div class="day-name-wrap">
+        <span class="day-name">${DAY_NAMES[dayIdx]}</span>
+        <span class="day-date">${d.getMonth()+1}/${d.getDate()}</span>
+      </div>
+      <div class="ring">
+        <svg width="26" height="26" viewBox="0 0 26 26">
+          <circle class="bg" cx="13" cy="13" r="10"></circle>
+          <circle class="fg" cx="13" cy="13" r="10" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"></circle>
+        </svg>
+      </div>`;
+    card.appendChild(head);
+
+    if(fixed){
+      const row = document.createElement('div');
+      row.className = 'fixed-row';
+      const txt = document.createElement('div');
+      txt.className = 'fixed-text';
+      txt.textContent = fixed.label;
+      row.appendChild(txt);
+      const actions = document.createElement('div');
+      actions.className = 'fixed-actions';
+      const editBtn = document.createElement('button');
+      editBtn.className = 'icon-btn';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', async () => {
+        const newLabel = prompt('Commitment (e.g. Coaching 6:30 - 9:00 PM):', fixed.label);
+        if(newLabel === null) return;
+        const newWindow = prompt('Suggested study window for this day:', fixed.window || '');
+        await saveFixed(dayIdx, { label: newLabel, window: newWindow || '' });
+        render();
+      });
+      const delBtn = document.createElement('button');
+      delBtn.className = 'icon-btn';
+      delBtn.textContent = 'Remove';
+      delBtn.addEventListener('click', async () => {
+        await saveFixed(dayIdx, null);
+        render();
+      });
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+      row.appendChild(actions);
+      card.appendChild(row);
+
+      const w = document.createElement('div');
+      w.className = 'window';
+      w.textContent = fixed.window || '';
+      card.appendChild(w);
+    } else {
+      const w = document.createElement('div');
+      w.className = 'window';
+      w.textContent = 'Open day - full study block';
+      card.appendChild(w);
+
+      const addFixedBtn = document.createElement('button');
+      addFixedBtn.className = 'add-fixed';
+      addFixedBtn.textContent = '+ Add a commitment';
+      addFixedBtn.addEventListener('click', async () => {
+        const label = prompt('Commitment (e.g. Coaching 6:30 - 9:00 PM):', '');
+        if(!label) return;
+        const win = prompt('Suggested study window for this day:', '');
+        await saveFixed(dayIdx, { label, window: win || '' });
+        render();
+      });
+      card.appendChild(addFixedBtn);
+    }
+
+    const taskWrap = document.createElement('div');
+    taskWrap.className = 'tasks';
+    data.tasks.forEach((t, idx) => {
+      const row = document.createElement('div');
+      row.className = 'task';
+      row.style.animationDelay = (idx*0.03)+'s';
+
+      const cbWrap = document.createElement('label');
+      cbWrap.className = 'cb-wrap';
+      cbWrap.innerHTML = `<input type="checkbox" ${t.done?'checked':''}/><span class="cb-box"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"></polyline></svg></span>`;
+      const cb = cbWrap.querySelector('input');
+      cb.addEventListener('change', async (e) => {
+        data.tasks[idx].done = e.target.checked;
+        await saveDay(key, data);
+        render();
+      });
+      row.appendChild(cbWrap);
+
+      const span = document.createElement('span');
+      span.className = 'task-text' + (t.done ? ' done' : '');
+      span.textContent = t.text;
+      span.title = 'Tap to edit';
+      span.addEventListener('click', () => {
+        const inputEl = document.createElement('input');
+        inputEl.className = 'task-text-input';
+        inputEl.value = t.text;
+        row.replaceChild(inputEl, span);
+        inputEl.focus();
+        const commit = async () => {
+          const val = inputEl.value.trim();
+          if(val){ data.tasks[idx].text = val; await saveDay(key, data); }
+          render();
+        };
+        inputEl.addEventListener('blur', commit);
+        inputEl.addEventListener('keydown', (e) => { if(e.key==='Enter') inputEl.blur(); });
+      });
+      row.appendChild(span);
+
+      const del = document.createElement('button');
+      del.className = 'del-btn';
+      del.textContent = '\u00d7';
+      del.setAttribute('aria-label','Delete task');
+      del.addEventListener('click', async () => {
+        data.tasks.splice(idx,1);
+        await saveDay(key, data);
+        render();
+      });
+      row.appendChild(del);
+
+      taskWrap.appendChild(row);
+    });
+    card.appendChild(taskWrap);
+
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    addRow.innerHTML = `<input type="text" placeholder="Add a task" /><button>Add</button>`;
+    const input = addRow.querySelector('input');
+    const btn = addRow.querySelector('button');
+    const addFn = async () => {
+      const val = input.value.trim();
+      if(!val) return;
+      data.tasks.push({text: val, done:false});
+      await saveDay(key, data);
+      render();
+    };
+    btn.addEventListener('click', addFn);
+    input.addEventListener('keydown', (e) => { if(e.key==='Enter') addFn(); });
+    card.appendChild(addRow);
+
+    weekGrid.appendChild(card);
+  }
+
+  await renderStats(todayKey);
+  await renderHeat(today);
+}
+
+function countUp(el, target){
+  const start = parseInt(el.dataset.val || '0', 10);
+  if(start === target){ el.textContent = target; return; }
+  el.dataset.val = target;
+  const dur = 500;
+  const t0 = performance.now();
+  function step(t){
+    const p = Math.min(1, (t - t0) / dur);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(start + (target - start) * eased);
+    if(p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+async function renderStats(todayKey){
+  const todayData = await loadDay(todayKey);
+  const doneCount = todayData.tasks.filter(t=>t.done).length;
+  document.getElementById('doneToday').textContent = `${doneCount}/${todayData.tasks.length}`;
+
+  let streak = 0;
+  let d = new Date();
+  while(true){
+    const key = fmtDate(d);
+    const data = await loadDay(key);
+    const allDone = data.tasks.length>0 && data.tasks.every(t=>t.done);
+    if(allDone){ streak++; d.setDate(d.getDate()-1); } else { break; }
+  }
+  countUp(document.getElementById('streakNum'), streak);
+
+  const keys = await idbKeysWithPrefix('day:');
+  countUp(document.getElementById('totalDays'), keys.length);
+}
+
+async function renderHeat(today){
+  const heat = document.getElementById('heatGrid');
+  heat.innerHTML = '';
+  const days = [];
+  for(let i=69;i>=0;i--){
+    const d = new Date(today);
+    d.setDate(d.getDate()-i);
+    days.push(d);
+  }
+  let idx = 0;
+  for(const d of days){
+    const key = fmtDate(d);
+    const data = await loadDay(key);
+    const done = data.tasks.filter(t=>t.done).length;
+    const total = data.tasks.length;
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    if(total>0 && done===total) cell.className += ' full';
+    else if(done>0) cell.className += ' partial';
+    cell.title = `${key}: ${done}/${total}`;
+    cell.style.animationDelay = (idx*0.006)+'s';
+    heat.appendChild(cell);
+    idx++;
+  }
+}
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  if(!confirm('Clear all saved tracker progress? This cannot be undone.')) return;
+  const dayKeys = await idbKeysWithPrefix('day:');
+  const fixedKeys = await idbKeysWithPrefix('fixed:');
+  for(const k of [...dayKeys, ...fixedKeys]){ await idbDelete(k); }
+  dayCache = {}; fixedCache = {};
+  render();
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+
+render();
+</script>
+</body>
+</html>
